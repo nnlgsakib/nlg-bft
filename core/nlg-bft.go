@@ -10,6 +10,7 @@ import (
 	"github.com/armon/go-metrics"
 	"github.com/nnlgsakib/nlg-bft/messages"
 	"github.com/nnlgsakib/nlg-bft/messages/proto"
+	"github.com/sirupsen/logrus"
 )
 
 // Logger represents the logger behaviour
@@ -57,7 +58,9 @@ var (
 // IBFT represents a single instance of the IBFT state machine
 type IBFT struct {
 	// log is the logger instance
-	log Logger
+	// log Logger
+	log *logrus.Entry
+
 
 	// state is the current IBFT node state
 	state *state
@@ -111,8 +114,13 @@ func NewIBFT(
 	backend Backend,
 	transport Transport,
 ) *IBFT {
+	// Use Logrus for colorful logging
+    logger := logrus.New()
+    logger.SetFormatter(&logrus.TextFormatter{
+        ForceColors:   true,
+    })
 	return &IBFT{
-		log:              log,
+		log: logrus.NewEntry(logger),
 		backend:          backend,
 		transport:        transport,
 		messages:         messages.NewMessages(),
@@ -315,8 +323,8 @@ func (i *IBFT) RunSequence(ctx context.Context, h uint64) {
 	// Prune messages for older heights
 	i.messages.PruneByHeight(h)
 
-	i.log.Info("sequence started", "height", h)
-	defer i.log.Info("sequence done", "height", h)
+	i.log.Info("Round Initiated", "height", h)
+	defer i.log.Info("Round Finalized", "height", h)
 	defer SetMeasurementTime("sequence", startTime)
 
 	for {
