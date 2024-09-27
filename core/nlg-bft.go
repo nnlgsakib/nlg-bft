@@ -323,14 +323,14 @@ func (i *IBFT) RunSequence(ctx context.Context, h uint64) {
 	// Prune messages for older heights
 	i.messages.PruneByHeight(h)
 
-	i.log.Info("Round Initiated", "height", h)
-	defer i.log.Info("Round Finalized", "height", h)
+	i.log.WithField("height", h).Info("Round Initiated")
+	i.log.WithField("height", h).Info("Round Finalized")
 	defer SetMeasurementTime("sequence", startTime)
 
 	for {
 		view := i.state.getView()
 
-		i.log.Info("round started", "round", view.Round)
+		i.log.WithField("round", view.Round).Info("round started")
 
 		currentRound := view.Round
 		ctxRound, cancelRound := context.WithCancel(ctx)
@@ -357,7 +357,7 @@ func (i *IBFT) RunSequence(ctx context.Context, h uint64) {
 		select {
 		case ev := <-i.newProposal:
 			teardown()
-			i.log.Info("received future proposal", "round", ev.round)
+			i.log.WithField("round", ev.round).Info("received future proposal")
 
 			i.moveToNewRound(ev.round)
 			i.acceptProposal(ev.proposalMessage)
@@ -365,12 +365,12 @@ func (i *IBFT) RunSequence(ctx context.Context, h uint64) {
 			i.sendPrepareMessage(view)
 		case round := <-i.roundCertificate:
 			teardown()
-			i.log.Info("received future RCC", "round", round)
+			i.log.WithField("round", round).Info("received future RCC")
 
 			i.moveToNewRound(round)
 		case <-i.roundExpired:
 			teardown()
-			i.log.Info("round timeout expired", "round", currentRound)
+			i.log.WithField("round", currentRound).Info("round timeout expired")
 
 			newRound := currentRound + 1
 			i.moveToNewRound(newRound)
