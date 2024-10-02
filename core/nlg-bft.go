@@ -323,8 +323,8 @@ func (i *IBFT) RunSequence(ctx context.Context, h uint64) {
 	// Prune messages for older heights
 	i.messages.PruneByHeight(h)
 
-	i.log.WithField("height", h).Info("Round Initiated")
-	i.log.WithField("height", h).Info("Round Finalized")
+	i.log.WithField("height", h).Info("sequence Initiated")
+	i.log.WithField("height", h).Info("sequence Finalized")
 	defer SetMeasurementTime("sequence", startTime)
 
 	for {
