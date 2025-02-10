@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"errors"
+	"math"
 	"sync"
 	"time"
 
@@ -1278,13 +1279,29 @@ func (i *IBFT) sendCommitMessage(view *proto.View) {
 }
 
 // hasQuorumByMsgType provides information on whether messages of specific types have reached the quorum
+// func (i *IBFT) hasQuorumByMsgType(msgs []*proto.Message, msgType proto.MessageType) bool {
+// 	switch msgType {
+// 	case proto.MessageType_PREPREPARE:
+// 		return len(msgs) >= 1
+// 	case proto.MessageType_PREPARE:
+// 		return i.validatorManager.HasPrepareQuorum(i.state.getStateName(), i.state.getProposalMessage(), msgs)
+// 	case proto.MessageType_ROUND_CHANGE, proto.MessageType_COMMIT:
+// 		return i.validatorManager.HasQuorum(convertMessageToAddressSet(msgs))
+// 	default:
+// 		return false
+// 	}
+// }
+
 func (i *IBFT) hasQuorumByMsgType(msgs []*proto.Message, msgType proto.MessageType) bool {
 	switch msgType {
 	case proto.MessageType_PREPREPARE:
 		return len(msgs) >= 1
 	case proto.MessageType_PREPARE:
 		return i.validatorManager.HasPrepareQuorum(i.state.getStateName(), i.state.getProposalMessage(), msgs)
-	case proto.MessageType_ROUND_CHANGE, proto.MessageType_COMMIT:
+	case proto.MessageType_ROUND_CHANGE:
+		// Allow ROUND_CHANGE messages to form a quorum with any number of validators, ignoring missing ones
+		return len(msgs) > 0
+	case proto.MessageType_COMMIT:
 		return i.validatorManager.HasQuorum(convertMessageToAddressSet(msgs))
 	default:
 		return false
@@ -1312,19 +1329,12 @@ func (i *IBFT) subscribe(details messages.SubscriptionDetails) *messages.Subscri
 //   - round 2: 2 sec
 //   - round 3: 4 sec
 //   - round 4: 8 sec
-// func getRoundTimeout(baseRoundTimeout, additionalTimeout time.Duration, round uint64) time.Duration {
-// 	var (
-// 		duration     = int(baseRoundTimeout)
-// 		roundFactor  = int(math.Pow(roundFactorBase, float64(round)))
-// 		roundTimeout = time.Duration(duration * roundFactor)
-// 	)
-
-// 	return roundTimeout + additionalTimeout
-// }
-
 func getRoundTimeout(baseRoundTimeout, additionalTimeout time.Duration, round uint64) time.Duration {
-	// Ensure the timeout is always the same for all rounds
-	const fixedTimeout = 1 * time.Second
+	var (
+		duration     = int(baseRoundTimeout)
+		roundFactor  = int(math.Pow(roundFactorBase, float64(round)))
+		roundTimeout = time.Duration(duration * roundFactor)
+	)
 
-	return fixedTimeout + additionalTimeout
+	return roundTimeout + additionalTimeout
 }
