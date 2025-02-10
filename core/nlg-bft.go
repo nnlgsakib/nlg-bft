@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"errors"
-	"math"
 	"sync"
 	"time"
 
@@ -61,7 +60,6 @@ type IBFT struct {
 	// log Logger
 	log *logrus.Entry
 
-
 	// state is the current IBFT node state
 	state *state
 
@@ -115,12 +113,12 @@ func NewIBFT(
 	transport Transport,
 ) *IBFT {
 	// Use Logrus for colorful logging
-    logger := logrus.New()
-    logger.SetFormatter(&logrus.TextFormatter{
-        ForceColors:   true,
-    })
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.TextFormatter{
+		ForceColors: true,
+	})
 	return &IBFT{
-		log: logrus.NewEntry(logger),
+		log:              logrus.NewEntry(logger),
 		backend:          backend,
 		transport:        transport,
 		messages:         messages.NewMessages(),
@@ -1314,12 +1312,19 @@ func (i *IBFT) subscribe(details messages.SubscriptionDetails) *messages.Subscri
 //   - round 2: 2 sec
 //   - round 3: 4 sec
 //   - round 4: 8 sec
-func getRoundTimeout(baseRoundTimeout, additionalTimeout time.Duration, round uint64) time.Duration {
-	var (
-		duration     = int(baseRoundTimeout)
-		roundFactor  = int(math.Pow(roundFactorBase, float64(round)))
-		roundTimeout = time.Duration(duration * roundFactor)
-	)
+// func getRoundTimeout(baseRoundTimeout, additionalTimeout time.Duration, round uint64) time.Duration {
+// 	var (
+// 		duration     = int(baseRoundTimeout)
+// 		roundFactor  = int(math.Pow(roundFactorBase, float64(round)))
+// 		roundTimeout = time.Duration(duration * roundFactor)
+// 	)
 
-	return roundTimeout + additionalTimeout
+// 	return roundTimeout + additionalTimeout
+// }
+
+func getRoundTimeout(baseRoundTimeout, additionalTimeout time.Duration, round uint64) time.Duration {
+	// Ensure the timeout is always the same for all rounds
+	const fixedTimeout = 1 * time.Second
+
+	return fixedTimeout + additionalTimeout
 }
